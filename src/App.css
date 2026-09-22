@@ -5016,16 +5016,23 @@ h2 {
 }
 
 .cd-filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 1rem;
+  display: grid;
+  /* Same pattern as .rc-compact-filter-row: 3 flexible filters + auto-width actions */
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 0.75rem;
+  width: 100%;
 }
 
-.cd-filter-row .db-date-field {
+.cd-filter-row > .db-date-field,
+.cd-filter-row > .cd-filter-actions {
   min-width: 0;
-  flex: 0 0 auto;
-  width: 190px;
+  width: auto;
+  max-width: none;
+}
+
+.cd-filter-row > .db-date-field {
+  width: 100%;
 }
 
 .cd-filter-row .db-date-field select {
@@ -5044,8 +5051,33 @@ h2 {
 .cd-filter-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  gap: 0.6rem;
+  padding-bottom: 1px;
+}
+
+@media (max-width: 1100px) {
+  .cd-filter-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cd-filter-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 640px) {
+  .cd-filter-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cd-filter-actions {
+    justify-content: stretch;
+  }
+
+  .cd-filter-actions > * {
+    flex: 1;
+    justify-content: center;
+  }
 }
 
 .cd-filter-row .db-refresh-icon-btn,
@@ -5592,13 +5624,38 @@ h2 {
   padding: 1rem 1.25rem 1.5rem;
 }
 
-.cca-filter-card .cca-filter-grid { padding: 0; }
+/* Campaign approval: same pattern as .rc-compact-filter-row —
+   flexible filter fields + auto-width Tra cứu flush right */
+.cca-filter-card .cca-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 0.75rem;
+  padding: 0;
+  width: 100%;
+}
 
 .cca-filter-grid .gw-form-field { min-width: 150px; }
 
+.cca-filter-card .cca-filter-grid > .gw-form-field {
+  min-width: 0;
+  width: 100%;
+}
+
 .cca-calendar.p-calendar { width: 190px; }
 
+.cca-filter-card .cca-calendar.p-calendar {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
 .cca-search-field { flex: 0 0 190px; }
+
+.cca-filter-card .cca-search-field {
+  flex: unset;
+  width: 100%;
+}
 
 .cca-search-field .pm-search-field { width: 100%; }
 
@@ -5610,6 +5667,35 @@ h2 {
 .cca-search-btn {
   border-radius: var(--radius-sm);
   height: 2.5rem;
+  flex-shrink: 0;
+}
+
+.cca-filter-card .cca-search-btn {
+  width: auto;
+  align-self: end;
+  padding-bottom: 1px;
+}
+
+@media (max-width: 1100px) {
+  .cca-filter-card .cca-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cca-filter-card .cca-search-btn {
+    justify-self: end;
+  }
+}
+
+@media (max-width: 640px) {
+  .cca-filter-card .cca-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cca-filter-card .cca-search-btn {
+    width: 100%;
+    justify-self: stretch;
+    justify-content: center;
+  }
 }
 
 .cca-checkbox-col { width: 2.5rem; text-align: center; }
