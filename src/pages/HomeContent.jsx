@@ -448,10 +448,10 @@ function HomeContent() {
             ) : (
               <div
                 className="db-bar-scroll"
-                style={{ minWidth: `${Math.max(chartData.length * Math.max(providers.length, 1) * 42, 100)}px` }}
+                style={{ minWidth: `${Math.max(chartData.length * Math.max(providers.length, 1) * 48, 100)}px` }}
               >
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 0, right: 8, left: 0, bottom: 24 }} barGap={3} barCategoryGap="35%">
+                  <BarChart data={chartData} margin={{ top: 0, right: 8, left: 0, bottom: 24 }} barGap={4} barCategoryGap="8%">
                     <CartesianGrid vertical={false} stroke="#E5E7EB" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="label"
@@ -486,7 +486,7 @@ function HomeContent() {
                           stackId={p}
                           fill={providerColors[p]}
                           radius={[0, 0, 0, 0]}
-                          barSize={10}
+                          barSize={20}
                         />
                         <Bar
                           dataKey={`${p}__failed`}
@@ -494,8 +494,8 @@ function HomeContent() {
                           stackId={p}
                           fill={providerColors[p]}
                           fillOpacity={0.35}
-                          radius={[3, 3, 0, 0]}
-                          barSize={10}
+                          radius={[4, 4, 0, 0]}
+                          barSize={20}
                         />
                       </Fragment>
                     ))}
