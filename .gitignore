@@ -12,10 +12,12 @@ dist
 dist-ssr
 *.local
 
-# Env — keep .env.example / .env.development / .env.production in repo
+# Env — only keep .env.example in repo; local/mode files stay private
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
 
 # Editor directories and files
 .vscode/*
