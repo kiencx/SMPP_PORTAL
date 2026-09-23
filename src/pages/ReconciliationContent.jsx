@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Calendar } from 'primereact/calendar'
 import { Dropdown } from 'primereact/dropdown'
 import { Dialog } from 'primereact/dialog'
 import { toast } from 'react-toastify'
@@ -20,6 +21,12 @@ import {
 import Pagination from '../components/common/Pagination'
 
 const ALL_OPTION = { label: 'Tất cả', value: 0 }
+
+function formatDate(date) {
+  if (!date) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
 
 function formatMonthYear(value) {
   if (!value) return '-'
@@ -79,6 +86,8 @@ function ReconciliationContent() {
   const [network, setNetwork] = useState(0)
   const [partner, setPartner] = useState(0)
   const [status, setStatus] = useState(0)
+  const [fromDate, setFromDate] = useState(null)
+  const [toDate, setToDate] = useState(null)
   const [selectedRows, setSelectedRows] = useState([])
   const [detailRow, setDetailRow] = useState(null)
 
@@ -150,11 +159,15 @@ function ReconciliationContent() {
     telcoId = network,
     providerId = partner,
     statusFilter = status,
+    from = fromDate,
+    to = toDate,
   } = {}) => {
     if (!authToken) return
 
     setListLoading(true)
     setListError('')
+
+    const applyDateFilter = Boolean(from && to)
 
     getSummarySms({
       token: authToken,
@@ -162,7 +175,9 @@ function ReconciliationContent() {
       limit,
       telcoId,
       providerId,
-      timeType: 0,
+      timeType: applyDateFilter ? 1 : 0,
+      startTime: applyDateFilter ? formatDate(from) : undefined,
+      endTime: applyDateFilter ? formatDate(to) : undefined,
       status: statusFilter,
     })
       .then(({ rows: nextRows, total: nextTotal, totalPage }) => {
@@ -209,6 +224,8 @@ function ReconciliationContent() {
     setNetwork(0)
     setPartner(0)
     setStatus(0)
+    setFromDate(null)
+    setToDate(null)
 
     fetchList({
       page: 1,
@@ -216,10 +233,16 @@ function ReconciliationContent() {
       telcoId: 0,
       providerId: 0,
       statusFilter: 0,
+      from: null,
+      to: null,
     })
   }
 
   const handleSearch = () => {
+    if ((fromDate && !toDate) || (!fromDate && toDate)) {
+      toast.warn('Vui lòng chọn đủ Từ ngày và Đến ngày.')
+      return
+    }
     fetchList({ page: 1, limit: reconPageSize })
   }
 
@@ -267,10 +290,19 @@ function ReconciliationContent() {
   const handleExport = () => {
     if (!authToken) return
 
+    if ((fromDate && !toDate) || (!fromDate && toDate)) {
+      toast.warn('Vui lòng chọn đủ Từ ngày và Đến ngày trước khi xuất báo cáo.')
+      return
+    }
+
+    const applyDateFilter = Boolean(fromDate && toDate)
+
     setExporting(true)
     exportReconciliationReport({
       token: authToken,
-      timeType: 0,
+      timeType: applyDateFilter ? 1 : 0,
+      startTime: applyDateFilter ? formatDate(fromDate) : undefined,
+      endTime: applyDateFilter ? formatDate(toDate) : undefined,
     })
       .then(({ blob, filename }) => {
         const url = URL.createObjectURL(blob)
@@ -363,7 +395,7 @@ function ReconciliationContent() {
           <span className="gw-card-icon"><Search size={18} /></span>
           <div>
             <h3 className="gw-card-title" style={{ margin: 0 }}>Bộ lọc đối soát</h3>
-            <p className="gw-card-subtitle" style={{ margin: '0.2rem 0 0' }}>Lọc theo nhà mạng, đối tác và trạng thái</p>
+            <p className="gw-card-subtitle" style={{ margin: '0.2rem 0 0' }}>Lọc theo nhà mạng, đối tác, trạng thái và khoảng thời gian</p>
           </div>
         </div>
 
@@ -381,6 +413,30 @@ function ReconciliationContent() {
           <div className="gw-form-field">
             <label>Trạng thái</label>
             <Dropdown value={status} onChange={(e) => setStatus(e.value)} options={STATUS_OPTIONS} className="bn-dropdown" />
+          </div>
+          <div className="gw-form-field">
+            <label>Từ ngày</label>
+            <Calendar
+              value={fromDate}
+              onChange={(e) => setFromDate(e.value)}
+              dateFormat="dd/mm/yy"
+              placeholder="DD/MM/YYYY"
+              showIcon
+              className="db-calendar"
+              panelClassName="db-datepicker-panel"
+            />
+          </div>
+          <div className="gw-form-field">
+            <label>Đến ngày</label>
+            <Calendar
+              value={toDate}
+              onChange={(e) => setToDate(e.value)}
+              dateFormat="dd/mm/yy"
+              placeholder="DD/MM/YYYY"
+              showIcon
+              className="db-calendar"
+              panelClassName="db-datepicker-panel"
+            />
           </div>
           <div className="rc-filter-actions">
             <button

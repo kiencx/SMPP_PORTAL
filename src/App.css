@@ -3510,9 +3510,15 @@ h2 {
 
 .rc-compact-filter-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
   align-items: end;
   gap: 0.75rem;
+}
+
+.rc-compact-filter-row .db-calendar.p-calendar {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
 }
 
 .rc-filter-actions {
