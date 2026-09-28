@@ -66,7 +66,7 @@ function Sidebar({ activeMenu, onChangeMenu, username, role, onLogout }) {
   return (
     <aside className={`sidebar w-16 ${collapsed ? 'collapsed' : 'md:w-60'}`}>
       <div className="sidebar-header">
-        <h2 className={`sidebar-title ${labelClass}`}>Main Menu</h2>
+        <h2 className={`sidebar-title ${labelClass}`}>Hệ thống tin nhắn</h2>
         <button
           className="sidebar-toggle-btn hidden md:flex"
           onClick={() => setCollapsed(!collapsed)}
