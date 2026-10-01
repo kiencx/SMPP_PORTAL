@@ -2,10 +2,10 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function RequireAuth({ children }) {
-  const { authToken } = useAuth()
+  const { authToken, authRole } = useAuth()
   const location = useLocation()
 
-  if (!authToken) {
+  if (!authToken || !authRole) {
     return <Navigate to="/login" replace state={{ from: location }} />
   }
 

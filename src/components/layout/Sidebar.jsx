@@ -40,9 +40,7 @@ const MENU_GROUPS = [
 
 function Sidebar({ activeMenu, onChangeMenu, username, role, onLogout }) {
   const [collapsed, setCollapsed] = useState(false)
-  const availableMenuGroups = role === 'CLIENT'
-    ? MENU_GROUPS.filter((group) => group.id === 'customer')
-    : MENU_GROUPS
+  const availableMenuGroups = MENU_GROUPS.filter((group) => group.roles.includes(role))
 
   const activeGroupId = availableMenuGroups.find((g) => g.items.some((i) => i.id === activeMenu))?.id || availableMenuGroups[0]?.id
   const [openGroups, setOpenGroups] = useState(() => new Set([activeGroupId]))

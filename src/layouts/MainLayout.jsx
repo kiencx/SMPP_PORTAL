@@ -106,7 +106,7 @@ function MainLayout() {
   const onChangeMenu = (menuId) => navigate(`/${menuId}`)
   const onGoHome = () => {
     setShowDistribution(false)
-    navigate('/dashboard')
+    navigate('/')
   }
 
   return (

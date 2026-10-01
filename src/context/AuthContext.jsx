@@ -1,18 +1,31 @@
 import { createContext, useContext, useState } from 'react'
+import { normalizeRole } from '../constants/auth'
 
 const AuthContext = createContext(null)
-const SUPPORTED_ROLES = new Set(['ADMIN', 'CLIENT'])
 
-function normalizeRole(role) {
-  const value = String(role ?? '').trim().toUpperCase()
-  return SUPPORTED_ROLES.has(value) ? value : ''
+function clearStoredSession() {
+  sessionStorage.removeItem('sms_token')
+  sessionStorage.removeItem('sms_username')
+  sessionStorage.removeItem('sms_role')
+}
+
+// A session without a supported role (e.g. stored before roles existed) must not
+// be allowed into the app, otherwise it would bypass role-based menus and routes.
+function readStoredSession() {
+  const token = sessionStorage.getItem('sms_token')
+  const role = normalizeRole(sessionStorage.getItem('sms_role'))
+  if (!token || !role) {
+    clearStoredSession()
+    return { token: null, username: '', role: '' }
+  }
+  return { token, username: sessionStorage.getItem('sms_username') || '', role }
 }
 
 export function AuthProvider({ children }) {
-  const storedRole = normalizeRole(sessionStorage.getItem('sms_role'))
-  const [authToken, setAuthToken] = useState(() => sessionStorage.getItem('sms_token') || null)
-  const [authUsername, setAuthUsername] = useState(() => sessionStorage.getItem('sms_username') || '')
-  const [authRole, setAuthRole] = useState(storedRole)
+  const [initialSession] = useState(readStoredSession)
+  const [authToken, setAuthToken] = useState(initialSession.token)
+  const [authUsername, setAuthUsername] = useState(initialSession.username)
+  const [authRole, setAuthRole] = useState(initialSession.role)
 
   const login = (token, username, role) => {
     const normalizedRole = normalizeRole(role)
@@ -25,9 +38,7 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
-    sessionStorage.removeItem('sms_token')
-    sessionStorage.removeItem('sms_username')
-    sessionStorage.removeItem('sms_role')
+    clearStoredSession()
     setAuthToken(null)
     setAuthUsername('')
     setAuthRole('')

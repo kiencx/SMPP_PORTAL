@@ -1,4 +1,5 @@
 import httpClient, { authHeader, safeRequest } from './httpClient'
+import { normalizeRole } from '../constants/auth'
 
 const LOGIN_URL = '/login'
 const SEND_URL = '/send'
@@ -22,10 +23,15 @@ export async function loginSms(username, password) {
     throw new Error('Không nhận được token từ server.')
   }
 
+  const role = normalizeRole(data?.data?.role)
+  if (!role) {
+    throw new Error('Tài khoản không có quyền truy cập hệ thống.')
+  }
+
   return {
     token,
     username: data?.data?.username ?? username,
-    role: data?.data?.role ?? null,
+    role,
   }
 }
 

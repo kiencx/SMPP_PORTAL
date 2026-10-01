@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate, useNavigate, useOutletContext } from 'react-router-dom'
 import RequireAuth from './RequireAuth'
+import RequireRole from './RequireRole'
+import { ROLES, ROLE_HOME_PATH } from '../constants/auth'
 import MainLayout from '../layouts/MainLayout'
 import LoginPage from '../pages/LoginPage'
 import HomeContent from '../pages/HomeContent'
@@ -51,10 +53,10 @@ function SendSmsPage() {
 }
 
 function LoginRoute() {
-  const { authToken, login } = useAuth()
+  const { authToken, authRole, login } = useAuth()
   const navigate = useNavigate()
 
-  if (authToken) {
+  if (authToken && authRole) {
     return <Navigate to="/" replace />
   }
 
@@ -64,6 +66,11 @@ function LoginRoute() {
   }
 
   return <LoginPage onLoginSuccess={handleLoginSuccess} />
+}
+
+function RoleHomeRedirect() {
+  const { authRole } = useAuth()
+  return <Navigate to={ROLE_HOME_PATH[authRole] || '/login'} replace />
 }
 
 function NotFoundPage() {
@@ -90,27 +97,37 @@ export const router = createBrowserRouter([
       </RequireAuth>
     ),
     children: [
-      { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: 'dashboard', element: <HomeContent /> },
-      { path: 'home', element: <Navigate to="/dashboard" replace /> },
-      { path: 'providers', element: <ProvidersPage /> },
-      { path: 'reports', element: <ReportsPage /> },
-      { path: 'send-sms', element: <SendSmsPage /> },
-      { path: 'routing', element: <RoutingRulesContent /> },
-      { path: 'gateway', element: <GatewayConfigContent /> },
-      { path: 'brandname', element: <BrandnameDeclarationContent /> },
-      { path: 'pricing', element: <PricingManagementContent /> },
-      { path: 'account', element: <AccountManagementContent /> },
-      { path: 'reconcile', element: <ReconciliationContent /> },
-      { path: 'lookup', element: <MessageLookupContent /> },
-      { path: 'customer/dashboard', element: <CustomerDashboardContent /> },
-      { path: 'customer/campaigns/new', element: <CustomerCampaignCreateContent /> },
-      { path: 'customer/campaigns/approval', element: <CustomerCampaignApprovalContent /> },
-      { path: 'customer/contacts', element: <CustomerContactsContent /> },
-      { path: 'customer/lookup', element: <CustomerMessageLookupContent /> },
+      { index: true, element: <RoleHomeRedirect /> },
+      { path: 'home', element: <RoleHomeRedirect /> },
       {
-        path: 'customer/history',
-        element: <ComingSoon title="Lịch sử tin nhắn" description="Tính năng lịch sử tin nhắn đang được phát triển." />,
+        element: <RequireRole roles={[ROLES.ADMIN]} />,
+        children: [
+          { path: 'dashboard', element: <HomeContent /> },
+          { path: 'providers', element: <ProvidersPage /> },
+          { path: 'reports', element: <ReportsPage /> },
+          { path: 'send-sms', element: <SendSmsPage /> },
+          { path: 'routing', element: <RoutingRulesContent /> },
+          { path: 'gateway', element: <GatewayConfigContent /> },
+          { path: 'brandname', element: <BrandnameDeclarationContent /> },
+          { path: 'pricing', element: <PricingManagementContent /> },
+          { path: 'account', element: <AccountManagementContent /> },
+          { path: 'reconcile', element: <ReconciliationContent /> },
+          { path: 'lookup', element: <MessageLookupContent /> },
+        ],
+      },
+      {
+        element: <RequireRole roles={[ROLES.CLIENT]} />,
+        children: [
+          { path: 'customer/dashboard', element: <CustomerDashboardContent /> },
+          { path: 'customer/campaigns/new', element: <CustomerCampaignCreateContent /> },
+          { path: 'customer/campaigns/approval', element: <CustomerCampaignApprovalContent /> },
+          { path: 'customer/contacts', element: <CustomerContactsContent /> },
+          { path: 'customer/lookup', element: <CustomerMessageLookupContent /> },
+          {
+            path: 'customer/history',
+            element: <ComingSoon title="Lịch sử tin nhắn" description="Tính năng lịch sử tin nhắn đang được phát triển." />,
+          },
+        ],
       },
       { path: '*', element: <NotFoundPage /> },
     ],
