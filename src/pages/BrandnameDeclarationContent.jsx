@@ -12,6 +12,7 @@ import { getRoutingInfo } from '../utils/routingApi'
 import { createBrandname, getBrandnameList } from '../utils/brandnameApi'
 
 const BRANDNAME_TYPE_LABELS = BRANDNAME_TYPES.reduce((acc, t) => ({ ...acc, [t.value]: t.label }), {})
+const TABLE_COLUMN_COUNT = 8
 
 const DEFAULT_FORM = {
   name: '',
@@ -199,32 +200,40 @@ function BrandnameDeclarationContent() {
               <tr>
                 <th>#</th>
                 <th>Tên Brandname</th>
-                <th>Loại Brandname</th>
                 <th>Đối tác</th>
+                <th>Loại Brandname</th>
+                <th>Doanh nghiệp</th>
+                <th>Mã số thuế</th>
+                <th>Số điện thoại</th>
+                <th>Email</th>
               </tr>
             </thead>
             <tbody>
               {listLoading && (
                 <tr>
-                  <td colSpan={4} className="gw-table-status">Đang tải danh sách brandname...</td>
+                  <td colSpan={TABLE_COLUMN_COUNT} className="gw-table-status">Đang tải danh sách brandname...</td>
                 </tr>
               )}
               {!listLoading && listError && (
                 <tr>
-                  <td colSpan={4} className="gw-table-status gw-table-error">{listError}</td>
+                  <td colSpan={TABLE_COLUMN_COUNT} className="gw-table-status gw-table-error">{listError}</td>
                 </tr>
               )}
               {!listLoading && !listError && filteredBrandnameList.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="gw-table-status">Chưa có brandname nào được khai báo.</td>
+                  <td colSpan={TABLE_COLUMN_COUNT} className="gw-table-status">Chưa có brandname nào được khai báo.</td>
                 </tr>
               )}
               {!listLoading && !listError && filteredBrandnameList.map((b, index) => (
                 <tr key={b.id}>
                   <td>{index + 1}</td>
                   <td><span className="table-network">{b.brandName}</span></td>
-                  <td>{BRANDNAME_TYPE_LABELS[b.type] || b.type || '-'}</td>
                   <td>{b.provider || '-'}</td>
+                  <td>{BRANDNAME_TYPE_LABELS[b.type] || b.type || '-'}</td>
+                  <td>{b.business || '-'}</td>
+                  <td>{b.taxCode || '-'}</td>
+                  <td>{b.phone || '-'}</td>
+                  <td>{b.email || '-'}</td>
                 </tr>
               ))}
             </tbody>
