@@ -138,15 +138,22 @@ function DonutDelivery({ segments }) {
   )
 }
 
-const DEFAULT_REPORT_FROM_DATE = new Date(2025, 5, 14)
-const DEFAULT_REPORT_TO_DATE = new Date(2025, 5, 14)
+function getCurrentMonthStart() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), 1)
+}
+
+function getCurrentMonthEnd() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0)
+}
 
 function HomeContent() {
   const { authToken } = useAuth()
-  const [fromDate, setFromDate] = useState(null)
-  const [toDate, setToDate] = useState(null)
-  const [reportFromDate, setReportFromDate] = useState(DEFAULT_REPORT_FROM_DATE)
-  const [reportToDate, setReportToDate] = useState(DEFAULT_REPORT_TO_DATE)
+  const [fromDate, setFromDate] = useState(getCurrentMonthStart)
+  const [toDate, setToDate] = useState(getCurrentMonthEnd)
+  const [reportFromDate, setReportFromDate] = useState(getCurrentMonthStart)
+  const [reportToDate, setReportToDate] = useState(getCurrentMonthEnd)
 
   const [dashboardBrandNameId, setDashboardBrandNameId] = useState(0)
   const [brandNameOptions, setBrandNameOptions] = useState([ALL_OPTION])
@@ -201,10 +208,12 @@ function HomeContent() {
   }
 
   const resetDashboardFilters = () => {
-    setFromDate(null)
-    setToDate(null)
+    const monthStart = getCurrentMonthStart()
+    const monthEnd = getCurrentMonthEnd()
+    setFromDate(monthStart)
+    setToDate(monthEnd)
     setDashboardBrandNameId(0)
-    fetchDashboard({ from: null, to: null, brandNameId: 0 })
+    fetchDashboard({ from: monthStart, to: monthEnd, brandNameId: 0 })
   }
 
   useEffect(() => {
@@ -225,7 +234,7 @@ function HomeContent() {
   const [reportError, setReportError] = useState('')
   const [reportPage, setReportPage] = useState(0)
   const [reportSize, setReportSize] = useState(10)
-  const [reportDateFilterApplied, setReportDateFilterApplied] = useState(false)
+  const [reportDateFilterApplied, setReportDateFilterApplied] = useState(true)
 
   useEffect(() => {
     if (!authToken) return
@@ -287,9 +296,11 @@ function HomeContent() {
     setReportBrandName('')
     setReportProviderId(0)
     setReportTelcoId(0)
-    setReportFromDate(DEFAULT_REPORT_FROM_DATE)
-    setReportToDate(DEFAULT_REPORT_TO_DATE)
-    setReportDateFilterApplied(false)
+    const monthStart = getCurrentMonthStart()
+    const monthEnd = getCurrentMonthEnd()
+    setReportFromDate(monthStart)
+    setReportToDate(monthEnd)
+    setReportDateFilterApplied(true)
 
     fetchReport({
       page: 0,
@@ -297,9 +308,9 @@ function HomeContent() {
       brandName: '',
       providerId: 0,
       telcoId: 0,
-      from: DEFAULT_REPORT_FROM_DATE,
-      to: DEFAULT_REPORT_TO_DATE,
-      applyDateFilter: false,
+      from: monthStart,
+      to: monthEnd,
+      applyDateFilter: true,
     })
   }
 

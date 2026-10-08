@@ -22,6 +22,16 @@ import Pagination from '../components/common/Pagination'
 
 const ALL_OPTION = { label: 'Tất cả', value: 0 }
 
+function getCurrentMonthStart() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), 1)
+}
+
+function getCurrentMonthEnd() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0)
+}
+
 function formatDate(date) {
   if (!date) return ''
   const pad = (n) => String(n).padStart(2, '0')
@@ -86,8 +96,8 @@ function ReconciliationContent() {
   const [network, setNetwork] = useState(0)
   const [partner, setPartner] = useState(0)
   const [status, setStatus] = useState(0)
-  const [fromDate, setFromDate] = useState(null)
-  const [toDate, setToDate] = useState(null)
+  const [fromDate, setFromDate] = useState(getCurrentMonthStart)
+  const [toDate, setToDate] = useState(getCurrentMonthEnd)
   const [selectedRows, setSelectedRows] = useState([])
   const [detailRow, setDetailRow] = useState(null)
 
@@ -224,8 +234,10 @@ function ReconciliationContent() {
     setNetwork(0)
     setPartner(0)
     setStatus(0)
-    setFromDate(null)
-    setToDate(null)
+    const monthStart = getCurrentMonthStart()
+    const monthEnd = getCurrentMonthEnd()
+    setFromDate(monthStart)
+    setToDate(monthEnd)
 
     fetchList({
       page: 1,
@@ -233,8 +245,8 @@ function ReconciliationContent() {
       telcoId: 0,
       providerId: 0,
       statusFilter: 0,
-      from: null,
-      to: null,
+      from: monthStart,
+      to: monthEnd,
     })
   }
 

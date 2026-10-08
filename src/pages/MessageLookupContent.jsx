@@ -14,8 +14,15 @@ import { lookupMessages } from '../utils/messageLookupApi'
 import Pagination from '../components/common/Pagination'
 
 const ALL_OPTION = { label: 'Tất cả', value: 0 }
-const DEFAULT_FROM_DATE = new Date(2026, 5, 14, 0, 0)
-const DEFAULT_TO_DATE = new Date(2026, 5, 15, 23, 59)
+function getTodayStart() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+}
+
+function getTodayEnd() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+}
 
 function formatDate(date) {
   if (!date) return ''
@@ -36,8 +43,8 @@ function MessageLookupContent() {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [phone, setPhone] = useState('')
   const [content, setContent] = useState('')
-  const [fromDate, setFromDate] = useState(DEFAULT_FROM_DATE)
-  const [toDate, setToDate] = useState(DEFAULT_TO_DATE)
+  const [fromDate, setFromDate] = useState(getTodayStart)
+  const [toDate, setToDate] = useState(getTodayEnd)
   const [msgId, setMsgId] = useState('')
   const [brandname, setBrandname] = useState(0)
   const [customer, setCustomer] = useState('all')
@@ -55,7 +62,7 @@ function MessageLookupContent() {
   const [resultTotal, setResultTotal] = useState(0)
   const [resultLoading, setResultLoading] = useState(false)
   const [resultError, setResultError] = useState('')
-  const [dateFilterApplied, setDateFilterApplied] = useState(false)
+  const [dateFilterApplied, setDateFilterApplied] = useState(true)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
 
@@ -124,15 +131,15 @@ function MessageLookupContent() {
   const handleReset = () => {
     setPhone('')
     setContent('')
-    setFromDate(DEFAULT_FROM_DATE)
-    setToDate(DEFAULT_TO_DATE)
+    setFromDate(getTodayStart())
+    setToDate(getTodayEnd())
     setMsgId('')
     setBrandname(0)
     setCustomer('all')
     setNetwork(0)
     setPartner(0)
     setDlrStatus('')
-    setDateFilterApplied(false)
+    setDateFilterApplied(true)
     setPage(0)
   }
 

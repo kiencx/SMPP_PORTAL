@@ -15,8 +15,14 @@ const ALL_STATUS = { value: 'all', label: 'Tất cả' }
 const STATUS_ICONS = { success: CheckCircle2, failed: XCircle, pending: Clock }
 const STATUS_META = LOOKUP_STATUS_OPTIONS.reduce((acc, s) => ({ ...acc, [s.value]: s }), {})
 
-function getDefaultDate() {
-  return new Date()
+function getTodayStart() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+}
+
+function getTodayEnd() {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
 }
 
 function mapStatusKey(rawStatus) {
@@ -57,9 +63,9 @@ function CustomerMessageLookupContent() {
   const [keyword, setKeyword] = useState('')
   const [telcoId, setTelcoId] = useState(0)
   const [status, setStatus] = useState('all')
-  const [fromDate, setFromDate] = useState(getDefaultDate)
-  const [toDate, setToDate] = useState(getDefaultDate)
-  const [dateFilterApplied, setDateFilterApplied] = useState(false)
+  const [fromDate, setFromDate] = useState(getTodayStart)
+  const [toDate, setToDate] = useState(getTodayEnd)
+  const [dateFilterApplied, setDateFilterApplied] = useState(true)
 
   const [telcoOptions, setTelcoOptions] = useState([ALL_TELCO])
 
@@ -128,15 +134,15 @@ function CustomerMessageLookupContent() {
   }, [authToken])
 
   const handleRefresh = () => {
-    const defaultFrom = getDefaultDate()
-    const defaultTo = getDefaultDate()
+    const defaultFrom = getTodayStart()
+    const defaultTo = getTodayEnd()
     setKeyword('')
     setTelcoId(0)
     setStatus('all')
     setFromDate(defaultFrom)
     setToDate(defaultTo)
-    setDateFilterApplied(false)
-    handleSearch(0, pageSize, { content: '', telcoId: 0, applyDateFilter: false, from: defaultFrom, to: defaultTo })
+    setDateFilterApplied(true)
+    handleSearch(0, pageSize, { content: '', telcoId: 0, applyDateFilter: true, from: defaultFrom, to: defaultTo })
   }
 
   const mappedRows = useMemo(
