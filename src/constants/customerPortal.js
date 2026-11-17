@@ -78,3 +78,22 @@ export const CAMPAIGN_APPROVAL_ROWS = [
     status: 'approved',
   },
 ]
+
+// Campaign statuses returned by /campaigns/list and /campaigns/history/list.
+export const CAMPAIGN_STATUSES = [
+  { value: 'DRAFT', label: 'Nháp', tone: 'gray' },
+  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt', tone: 'amber' },
+  { value: 'REJECTED', label: 'Từ chối', tone: 'red' },
+  { value: 'APPROVED', label: 'Đã duyệt', tone: 'green' },
+  { value: 'QUEUED', label: 'Đã xếp lịch', tone: 'blue' },
+  { value: 'SENDING', label: 'Đang gửi', tone: 'blue' },
+  { value: 'SUCCESS', label: 'Gửi xong', tone: 'green' },
+  { value: 'FAILED', label: 'Thất bại', tone: 'red' },
+  { value: 'CANCELLED', label: 'Đã hủy', tone: 'gray' },
+]
+
+export const CAMPAIGN_SMS_TYPE_LABELS = { CSKH: 'CSKH', QC: 'Quảng cáo', OTP: 'OTP' }
+
+export const CAMPAIGN_SOURCE_LABELS = { FILE: 'Upload file', PHONE: 'Nhập số' }
+
+export const CAMPAIGN_SEND_TYPE_LABELS = { NOW: 'Gửi ngay', SCHEDULED: 'Hẹn lịch' }
