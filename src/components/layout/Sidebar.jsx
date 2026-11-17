@@ -31,16 +31,18 @@ const MENU_GROUPS = [
       { id: 'customer/dashboard', label: 'Báo cáo thống kê', icon: LayoutDashboard },
       { id: 'customer/campaigns/new', label: 'Tạo chiến dịch gửi tin', icon: Send },
       { id: 'customer/campaigns/approval', label: 'Quản lý phê duyệt chiến dịch', icon: ClipboardCheck },
-      { id: 'customer/contacts', label: 'Quản lý danh bạ', icon: BookUser },
+      { id: 'customer/contacts', label: 'Quản lý danh bạ', icon: BookUser, hidden: true },
       { id: 'customer/lookup', label: 'Tra cứu tin nhắn', icon: FileSearch2 },
-      { id: 'customer/history', label: 'Lịch sử tin nhắn', icon: History },
+      { id: 'customer/history', label: 'Lịch sử tin nhắn', icon: History, hidden: true },
     ],
   },
 ]
 
 function Sidebar({ activeMenu, onChangeMenu, username, role, onLogout }) {
   const [collapsed, setCollapsed] = useState(false)
-  const availableMenuGroups = MENU_GROUPS.filter((group) => group.roles.includes(role))
+  const availableMenuGroups = MENU_GROUPS
+    .filter((group) => group.roles.includes(role))
+    .map((group) => ({ ...group, items: group.items.filter((item) => !item.hidden) }))
 
   const activeGroupId = availableMenuGroups.find((g) => g.items.some((i) => i.id === activeMenu))?.id || availableMenuGroups[0]?.id
   const [openGroups, setOpenGroups] = useState(() => new Set([activeGroupId]))
