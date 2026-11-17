@@ -6012,24 +6012,45 @@ textarea.cw-input { resize: vertical; }
 .cca-detail-note { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--gray-600); }
 .cca-detail-error { color: var(--red); }
 .cca-detail-content { white-space: pre-wrap; }
-.cca-row-actions { display: flex; gap: 0.3rem 0.4rem; flex-wrap: wrap; max-width: 190px; }
+.cca-row-actions { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; width: 6.5rem; }
 .cca-overdue-hint { flex-basis: 100%; font-size: 0.72rem; color: var(--gray-600); }
-.cca-action-select {
-  min-width: 140px;
-  height: 2.1rem;
-  padding: 0 0.5rem;
+.cca-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-sm);
   background: var(--white);
-  font: inherit;
-  font-size: 0.8rem;
-  color: var(--gray-800);
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
-.cca-action-select:hover:not(:disabled) { border-color: var(--gray-400); }
-.cca-action-select:focus { outline: none; border-color: var(--red); }
-.cca-action-select:disabled { background: var(--gray-100); cursor: not-allowed; }
-.cca-action-none { color: var(--gray-400); }
+.cca-icon-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.cca-icon-tip { display: inline-flex; }
+/* Let the wrapper receive hover so disabled buttons still show their tooltip. */
+.cca-icon-tip:has(.cca-icon-btn:disabled) { cursor: not-allowed; }
+.cca-icon-btn:disabled { opacity: 0.45; pointer-events: none; }
+.cca-icon-btn--view { color: var(--orange); }
+.cca-icon-btn--view:hover:not(:disabled) { background: #FFF7ED; border-color: #FED7AA; }
+.cca-icon-btn--approve { color: #16a34a; }
+.cca-icon-btn--approve:hover:not(:disabled) { background: #F0FDF4; border-color: #BBF7D0; }
+.cca-icon-btn--reject { color: var(--red); }
+.cca-icon-btn--reject:hover:not(:disabled) { background: #FEF2F2; border-color: #FECACA; }
+.cca-icon-spin { animation: login-spin 0.8s linear infinite; }
+/* The global `* { padding: 0 }` reset is unlayered, so it beats the PrimeReact theme's
+   layered tooltip padding; restore it here. */
+.p-tooltip.p-tooltip-top,
+.p-tooltip.p-tooltip-bottom { padding: 0.25em 0; }
+.p-tooltip.p-tooltip-left,
+.p-tooltip.p-tooltip-right { padding: 0 0.25rem; }
+.p-tooltip .p-tooltip-text {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  border-radius: 6px;
+}
 /* Pinned "Thao tác" column: stays visible while the table scrolls horizontally. */
 .cca-table .cca-sticky-col {
   position: sticky;

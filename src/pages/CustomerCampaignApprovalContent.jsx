@@ -3,10 +3,11 @@ import { Calendar } from 'primereact/calendar'
 import { Dialog } from 'primereact/dialog'
 import { Button } from 'primereact/button'
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
+import { Tooltip } from 'primereact/tooltip'
 import { toast } from 'react-toastify'
 import {
   Search, Eye, Clock, FileClock, CheckCircle2, XCircle, ClipboardCheck, ListChecks,
-  CalendarClock, Send, Ban, History,
+  CalendarClock, Send, Ban, History, Check, X, Loader2,
 } from 'lucide-react'
 import {
   CAMPAIGN_STATUSES,
@@ -28,7 +29,7 @@ import Pagination from '../components/common/Pagination'
 
 const ALL_STATUS = { value: '', label: 'Tất cả trạng thái' }
 const ALL_BRANDNAME = { value: 0, label: 'Tất cả Brandname' }
-const CAMPAIGN_COLUMN_COUNT = 12
+const CAMPAIGN_COLUMN_COUNT = 11
 const REASON_MAX = 255
 const HISTORY_COLUMN_COUNT = 5
 
@@ -347,11 +348,6 @@ function CustomerCampaignApprovalContent() {
     })
   }
 
-  const handleRowAction = (row, action) => {
-    if (action === 'approve') handleApprove(row)
-    else if (action === 'reject') openReject(row)
-  }
-
   const openReject = (row) => {
     setRejectRow(row)
     setRejectReason('')
@@ -397,6 +393,13 @@ function CustomerCampaignApprovalContent() {
     if (el.firstElementChild) observer.observe(el.firstElementChild)
     return () => observer.disconnect()
   }, [])
+
+  // PrimeReact's Tooltip only binds selector targets when it re-renders, so
+  // rebind whenever the rows (and therefore the icon buttons) change.
+  const actionTooltipRef = useRef(null)
+  useEffect(() => {
+    actionTooltipRef.current?.updateTargetEvents()
+  }, [rows, actionId])
 
   const shown = detail || detailRow
 
@@ -464,6 +467,7 @@ function CustomerCampaignApprovalContent() {
           </div>
         </div>
 
+        <Tooltip ref={actionTooltipRef} target=".cca-icon-tip" position="top" />
         <div
           ref={listScrollRef}
           className={`overflow-x-auto${listPinned ? ' cca-scroll-pinned' : ''}`}
@@ -482,7 +486,6 @@ function CustomerCampaignApprovalContent() {
                 <th>Sản lượng</th>
                 <th>Ngày tạo</th>
                 <th>Trạng thái hiện tại</th>
-                <th>Chi tiết</th>
                 <th className="cca-sticky-col">Thao tác</th>
               </tr>
             </thead>
@@ -508,37 +511,52 @@ function CustomerCampaignApprovalContent() {
                   <td>{numberFormat(row.quantity)} SMS</td>
                   <td>{formatDateTime(row.createdAt)}</td>
                   <td><StatusBadge status={row.status} /></td>
-                  <td>
-                    <button
-                      type="button"
-                      className="lk-detail-link lk-detail-icon-btn"
-                      onClick={() => openDetail(row)}
-                      title="Xem chi tiết"
-                      aria-label={`Xem chi tiết chiến dịch ${row.name}`}
-                    >
-                      <Eye size={16} />
-                    </button>
-                  </td>
                   <td className="cca-sticky-col">
-                    {row.status === 'PENDING_APPROVAL' ? (
-                      <div className="cca-row-actions">
-                        <select
-                          className="cca-action-select"
-                          value=""
-                          onChange={(e) => handleRowAction(row, e.target.value)}
-                          disabled={actionId != null}
-                          aria-label={`Thao tác với chiến dịch ${row.name}`}
-                          aria-describedby={isOverdue(row) ? `cca-overdue-${row.id}` : undefined}
+                    <div className="cca-row-actions">
+                      <span className="cca-icon-tip" data-pr-tooltip="Xem chi tiết">
+                        <button
+                          type="button"
+                          className="cca-icon-btn cca-icon-btn--view"
+                          onClick={() => openDetail(row)}
+                          aria-label={`Xem chi tiết chiến dịch ${row.name}`}
                         >
-                          <option value="">{actionId === row.id ? 'Đang xử lý...' : 'Chọn thao tác'}</option>
-                          <option value="approve" disabled={isOverdue(row)}>Duyệt</option>
-                          <option value="reject">Từ chối</option>
-                        </select>
-                        {isOverdue(row) && (
-                          <span id={`cca-overdue-${row.id}`} className="cca-overdue-hint">Quá giờ gửi, chỉ có thể từ chối</span>
-                        )}
-                      </div>
-                    ) : <span className="cca-action-none">-</span>}
+                          <Eye size={16} />
+                        </button>
+                      </span>
+                      {row.status === 'PENDING_APPROVAL' && (
+                        <>
+                          <span
+                            className="cca-icon-tip"
+                            data-pr-tooltip={isOverdue(row) ? 'Quá giờ gửi, chỉ có thể từ chối' : 'Duyệt'}
+                          >
+                            <button
+                              type="button"
+                              className="cca-icon-btn cca-icon-btn--approve"
+                              onClick={() => handleApprove(row)}
+                              disabled={actionId != null || isOverdue(row)}
+                              aria-label={`Duyệt chiến dịch ${row.name}`}
+                              aria-describedby={isOverdue(row) ? `cca-overdue-${row.id}` : undefined}
+                            >
+                              {actionId === row.id && !rejectRow ? <Loader2 size={16} className="cca-icon-spin" /> : <Check size={16} />}
+                            </button>
+                          </span>
+                          <span className="cca-icon-tip" data-pr-tooltip="Từ chối">
+                            <button
+                              type="button"
+                              className="cca-icon-btn cca-icon-btn--reject"
+                              onClick={() => openReject(row)}
+                              disabled={actionId != null}
+                              aria-label={`Từ chối chiến dịch ${row.name}`}
+                            >
+                              <X size={16} />
+                            </button>
+                          </span>
+                          {isOverdue(row) && (
+                            <span id={`cca-overdue-${row.id}`} className="cca-overdue-hint">Quá giờ gửi, chỉ có thể từ chối</span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
