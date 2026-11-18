@@ -6006,14 +6006,16 @@ textarea.cw-input { resize: vertical; }
 .cca-detail-note { margin: 0 0 0.75rem; font-size: 0.82rem; color: var(--gray-600); }
 .cca-detail-error { color: var(--red); }
 .cca-detail-content { white-space: pre-wrap; }
-.cca-row-actions { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; width: 6.5rem; }
+.cca-row-actions { display: flex; align-items: center; justify-content: flex-start; gap: 0.25rem; flex-wrap: wrap; width: 5.75rem; }
+/* Long campaign names wrap instead of stretching the table on one line. */
+.cca-name-cell { white-space: normal; overflow-wrap: anywhere; min-width: 11rem; max-width: 15rem; }
 .cca-overdue-hint { flex-basis: 100%; font-size: 0.72rem; color: var(--gray-600); }
 .cca-icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-sm);
@@ -6047,22 +6049,6 @@ textarea.cw-input { resize: vertical; }
   line-height: 1.4;
   border-radius: 6px;
 }
-/* Pinned "Thao tác" column: stays visible while the table scrolls horizontally. */
-.cca-table .cca-sticky-col {
-  position: sticky;
-  right: 0;
-  z-index: 1;
-  background: var(--white);
-  /* Inset shadow instead of border-left: with border-collapse the border would scroll away. */
-  box-shadow: inset 1px 0 0 var(--gray-200);
-  transition: box-shadow 0.15s ease;
-}
-/* Like antd fixed columns: drop shadow only while columns are hidden behind the pinned one. */
-.cca-scroll-pinned .cca-table .cca-sticky-col {
-  box-shadow: inset 1px 0 0 var(--gray-200), -8px 0 10px -6px rgba(0, 0, 0, 0.18);
-}
-.cca-table thead .cca-sticky-col { background: var(--gray-50); z-index: 2; }
-.cca-table tbody tr:hover .cca-sticky-col { background: var(--gray-50); }
 .cca-reject-dialog.p-dialog { width: 480px; max-width: 94vw; border-radius: var(--radius); overflow: hidden; }
 /* Global `* { padding: 0 }` overrides the theme's layered dialog padding; set it explicitly. */
 .cca-reject-dialog .p-dialog-header {

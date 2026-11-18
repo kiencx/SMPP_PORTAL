@@ -31,7 +31,7 @@ import Pagination from '../components/common/Pagination'
 
 const ALL_STATUS = { value: '', label: 'Tất cả trạng thái' }
 const ALL_BRANDNAME = { value: 0, label: 'Tất cả Brandname' }
-const CAMPAIGN_COLUMN_COUNT = 11
+const CAMPAIGN_COLUMN_COUNT = 9
 const DEFAULT_PAGE_SIZE = 5
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
 const REASON_MAX = 255
@@ -381,24 +381,6 @@ function CustomerCampaignApprovalContent() {
       .finally(() => setActionId(null))
   }
 
-  // Show the pinned-column shadow only while content is hidden behind it.
-  const listScrollRef = useRef(null)
-  const [listPinned, setListPinned] = useState(false)
-
-  const updateListPinned = (el) => {
-    if (!el) return
-    setListPinned(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
-  }
-
-  useEffect(() => {
-    const el = listScrollRef.current
-    if (!el || typeof ResizeObserver === 'undefined') return undefined
-    const observer = new ResizeObserver(() => updateListPinned(el))
-    observer.observe(el)
-    if (el.firstElementChild) observer.observe(el.firstElementChild)
-    return () => observer.disconnect()
-  }, [])
-
   // PrimeReact's Tooltip only binds selector targets when it re-renders, so
   // rebind whenever the rows (and therefore the icon buttons) change.
   const actionTooltipRef = useRef(null)
@@ -473,25 +455,19 @@ function CustomerCampaignApprovalContent() {
         </div>
 
         <Tooltip ref={actionTooltipRef} target=".cca-icon-tip" position="top" />
-        <div
-          ref={listScrollRef}
-          className={`overflow-x-auto${listPinned ? ' cca-scroll-pinned' : ''}`}
-          onScroll={(e) => updateListPinned(e.currentTarget)}
-        >
+        <div className="overflow-x-auto">
           <table className="routing-table cca-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Tên chiến dịch</th>
-                <th>Brandname</th>
-                <th>Loại tin</th>
                 <th>Nguồn danh sách</th>
                 <th>Hình thức gửi</th>
                 <th>Thời gian gửi</th>
                 <th>Sản lượng</th>
                 <th>Ngày tạo</th>
                 <th>Trạng thái hiện tại</th>
-                <th className="cca-sticky-col">Thao tác</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -507,16 +483,14 @@ function CustomerCampaignApprovalContent() {
               {!loading && !error && rows.map((row) => (
                 <tr key={row.id}>
                   <td>{row.id}</td>
-                  <td>{row.name || '-'}</td>
-                  <td>{row.brandname || '-'}</td>
-                  <td>{CAMPAIGN_SMS_TYPE_LABELS[row.smsType] || row.smsType || '-'}</td>
+                  <td className="cca-name-cell">{row.name || '-'}</td>
                   <td>{CAMPAIGN_SOURCE_LABELS[row.sourceType] || row.sourceType || '-'}</td>
                   <td>{CAMPAIGN_SEND_TYPE_LABELS[row.type] || row.type || '-'}</td>
                   <td>{formatDateTime(row.sendTime)}</td>
                   <td>{numberFormat(row.quantity)} SMS</td>
                   <td>{formatDateTime(row.createdAt)}</td>
                   <td><StatusBadge status={row.status} /></td>
-                  <td className="cca-sticky-col">
+                  <td>
                     <div className="cca-row-actions">
                       <span className="cca-icon-tip" data-pr-tooltip="Xem chi tiết">
                         <button
@@ -525,7 +499,7 @@ function CustomerCampaignApprovalContent() {
                           onClick={() => openDetail(row)}
                           aria-label={`Xem chi tiết chiến dịch ${row.name}`}
                         >
-                          <Eye size={16} />
+                          <Eye size={14} />
                         </button>
                       </span>
                       {EDITABLE_CAMPAIGN_STATUSES.includes(row.status) && (
@@ -537,7 +511,7 @@ function CustomerCampaignApprovalContent() {
                             disabled={actionId != null}
                             aria-label={`Sửa chiến dịch ${row.name}`}
                           >
-                            <Pencil size={15} />
+                            <Pencil size={13} />
                           </button>
                         </span>
                       )}
@@ -555,7 +529,7 @@ function CustomerCampaignApprovalContent() {
                               aria-label={`Duyệt chiến dịch ${row.name}`}
                               aria-describedby={isOverdue(row) ? `cca-overdue-${row.id}` : undefined}
                             >
-                              {actionId === row.id && !rejectRow ? <Loader2 size={16} className="cca-icon-spin" /> : <Check size={16} />}
+                              {actionId === row.id && !rejectRow ? <Loader2 size={14} className="cca-icon-spin" /> : <Check size={14} />}
                             </button>
                           </span>
                           <span className="cca-icon-tip" data-pr-tooltip="Từ chối">
@@ -566,7 +540,7 @@ function CustomerCampaignApprovalContent() {
                               disabled={actionId != null}
                               aria-label={`Từ chối chiến dịch ${row.name}`}
                             >
-                              <X size={16} />
+                              <X size={14} />
                             </button>
                           </span>
                           {isOverdue(row) && (
