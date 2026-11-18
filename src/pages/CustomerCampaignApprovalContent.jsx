@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Calendar } from 'primereact/calendar'
 import { Dialog } from 'primereact/dialog'
 import { Button } from 'primereact/button'
@@ -7,13 +8,14 @@ import { Tooltip } from 'primereact/tooltip'
 import { toast } from 'react-toastify'
 import {
   Search, Eye, Clock, FileClock, CheckCircle2, XCircle, ClipboardCheck, ListChecks,
-  CalendarClock, Send, Ban, History, Check, X, Loader2,
+  CalendarClock, Send, Ban, History, Check, X, Loader2, Pencil,
 } from 'lucide-react'
 import {
   CAMPAIGN_STATUSES,
   CAMPAIGN_SMS_TYPE_LABELS,
   CAMPAIGN_SOURCE_LABELS,
   CAMPAIGN_SEND_TYPE_LABELS,
+  EDITABLE_CAMPAIGN_STATUSES,
 } from '../constants/customerPortal'
 import { useAuth } from '../context/AuthContext'
 import { getRoutingInfo } from '../utils/routingApi'
@@ -30,6 +32,8 @@ import Pagination from '../components/common/Pagination'
 const ALL_STATUS = { value: '', label: 'Tất cả trạng thái' }
 const ALL_BRANDNAME = { value: 0, label: 'Tất cả Brandname' }
 const CAMPAIGN_COLUMN_COUNT = 11
+const DEFAULT_PAGE_SIZE = 5
+const PAGE_SIZE_OPTIONS = [5, 10, 20, 50]
 const REASON_MAX = 255
 const HISTORY_COLUMN_COUNT = 5
 
@@ -132,6 +136,7 @@ function validateRange(from, to) {
 
 function CustomerCampaignApprovalContent() {
   const { authToken } = useAuth()
+  const navigate = useNavigate()
 
   const [brandnameOptions, setBrandnameOptions] = useState([ALL_BRANDNAME])
 
@@ -153,7 +158,7 @@ function CustomerCampaignApprovalContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   // ---------- Detail dialog ----------
   const [detailRow, setDetailRow] = useState(null)
@@ -173,7 +178,7 @@ function CustomerCampaignApprovalContent() {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState('')
   const [historyPage, setHistoryPage] = useState(1)
-  const [historyPageSize, setHistoryPageSize] = useState(10)
+  const [historyPageSize, setHistoryPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   useEffect(() => {
     if (!authToken) return
@@ -501,7 +506,7 @@ function CustomerCampaignApprovalContent() {
               )}
               {!loading && !error && rows.map((row) => (
                 <tr key={row.id}>
-                  <td><span className="cca-campaign-code">{row.id}</span></td>
+                  <td>{row.id}</td>
                   <td>{row.name || '-'}</td>
                   <td>{row.brandname || '-'}</td>
                   <td>{CAMPAIGN_SMS_TYPE_LABELS[row.smsType] || row.smsType || '-'}</td>
@@ -523,6 +528,19 @@ function CustomerCampaignApprovalContent() {
                           <Eye size={16} />
                         </button>
                       </span>
+                      {EDITABLE_CAMPAIGN_STATUSES.includes(row.status) && (
+                        <span className="cca-icon-tip" data-pr-tooltip="Sửa">
+                          <button
+                            type="button"
+                            className="cca-icon-btn cca-icon-btn--edit"
+                            onClick={() => navigate(`/customer/campaigns/new?id=${row.id}`)}
+                            disabled={actionId != null}
+                            aria-label={`Sửa chiến dịch ${row.name}`}
+                          >
+                            <Pencil size={15} />
+                          </button>
+                        </span>
+                      )}
                       {row.status === 'PENDING_APPROVAL' && (
                         <>
                           <span
@@ -570,6 +588,7 @@ function CustomerCampaignApprovalContent() {
           pageSize={pageSize}
           onPageChange={(p) => fetchCampaigns(p, pageSize)}
           onPageSizeChange={(size) => fetchCampaigns(1, size)}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           disabled={loading || actionId != null}
         />
       </div>
@@ -660,6 +679,7 @@ function CustomerCampaignApprovalContent() {
           pageSize={historyPageSize}
           onPageChange={(p) => fetchHistory(p, historyPageSize)}
           onPageSizeChange={(size) => fetchHistory(1, size)}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           disabled={historyLoading}
         />
       </div>

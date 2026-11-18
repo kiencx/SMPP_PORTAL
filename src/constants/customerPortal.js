@@ -97,3 +97,6 @@ export const CAMPAIGN_SMS_TYPE_LABELS = { CSKH: 'CSKH', QC: 'Quảng cáo', OTP:
 export const CAMPAIGN_SOURCE_LABELS = { FILE: 'Upload file', PHONE: 'Nhập số' }
 
 export const CAMPAIGN_SEND_TYPE_LABELS = { NOW: 'Gửi ngay', SCHEDULED: 'Hẹn lịch' }
+
+// Backend only accepts draft edits (and file imports) for these statuses; others return 409.
+export const EDITABLE_CAMPAIGN_STATUSES = ['DRAFT', 'REJECTED']

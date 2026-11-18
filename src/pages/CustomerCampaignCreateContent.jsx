@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { Calendar } from 'primereact/calendar'
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
@@ -14,7 +15,7 @@ import {
   confirmCampaign,
   toApiDateTime,
 } from '../utils/campaignApi'
-import { SMS_SEGMENTS } from '../constants/customerPortal'
+import { SMS_SEGMENTS, EDITABLE_CAMPAIGN_STATUSES } from '../constants/customerPortal'
 import Pagination from '../components/common/Pagination'
 
 const NAME_MAX = 100
@@ -47,6 +48,8 @@ const SMS_TYPES = [
 ]
 
 const SMS_TYPE_LABELS = { CSKH: 'CSKH', QC: 'Quảng cáo', OTP: 'OTP' }
+
+const APPROVAL_PATH = '/customer/campaigns/approval'
 
 const pad = (n) => String(n).padStart(2, '0')
 
@@ -161,8 +164,14 @@ function KV({ label, children, last = false }) {
 
 const INITIAL_PREVIEW = { rows: [], total: 0, invalidTotal: 0, totalPage: 1 }
 
-function CustomerCampaignCreateContent() {
+function CustomerCampaignCreateContent({ editId = null }) {
   const { authToken } = useAuth()
+  const navigate = useNavigate()
+  const isEdit = editId != null
+  const [editLoading, setEditLoading] = useState(isEdit)
+  const [editError, setEditError] = useState('')
+  const [editReason, setEditReason] = useState('')
+  const [editScheduleExpired, setEditScheduleExpired] = useState(false)
 
   const [step, setStep] = useState(1)
   const [maxStep, setMaxStep] = useState(1)
@@ -220,6 +229,63 @@ function CustomerCampaignCreateContent() {
       cancelled = true
     }
   }, [authToken])
+
+  // Edit mode: load the campaign and fill every step from its saved fields.
+  useEffect(() => {
+    if (!authToken || !isEdit) return undefined
+    let cancelled = false
+    getCampaignDetail({ token: authToken, id: editId })
+      .then((d) => {
+        if (cancelled) return
+        if (!EDITABLE_CAMPAIGN_STATUSES.includes(d?.status)) {
+          setEditError('Chỉ được sửa chiến dịch ở trạng thái nháp hoặc bị từ chối.')
+          return
+        }
+        setCampaignId(d.id)
+        setCampaignName(d.name || '')
+        if (d.brandnameId != null) setBrandnameId(String(d.brandnameId))
+        setSmsType(d.smsType || 'CSKH')
+        setDescription(d.description || '')
+        if (d.sourceType === 'PHONE') {
+          setSourceType('PHONE')
+          setPhonesText((d.phones || []).join('\n'))
+        } else if (d.sourceType === 'FILE') {
+          // The original file is not stored; keep its name and row count so the
+          // saved list is reused unless the user imports a new file. `file` can be
+          // null (e.g. set by another client); still keep FILE so saves don't wipe it.
+          const total = d.progress?.total ?? 0
+          setSourceType('FILE')
+          if (total > 0) {
+            setImportResult({ file: d.file || 'Danh sách số đã nhập', total, success: total, failed: 0, duplicated: 0, rows: [], fromServer: true })
+          }
+        }
+        setContent(d.content || '')
+        if (d.type === 'SCHEDULED' && d.sendTime) {
+          const at = new Date(d.sendTime)
+          setSendType('SCHEDULED')
+          if (!Number.isNaN(at.getTime())) {
+            setScheduleDate(at)
+            setScheduleTime(at)
+          }
+          // buildPayload drops an expired schedule, so the next save clears it; tell the user up front.
+          if (!isScheduleValid(at)) setEditScheduleExpired(true)
+        } else {
+          setSendType('NOW')
+        }
+        // Resend the saved send type on every draft save (see buildPayload).
+        if (d.type) setMaxStep(4)
+        if (d.status === 'REJECTED') setEditReason(d.statusReason || '')
+      })
+      .catch((err) => {
+        if (!cancelled) setEditError(err.message || 'Không tải được chiến dịch.')
+      })
+      .finally(() => {
+        if (!cancelled) setEditLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [authToken, editId, isEdit])
 
   const phoneCheck = useMemo(() => parsePhones(phonesText), [phonesText])
   const brandnameLabel = brandnames.find((b) => String(b.id) === String(brandnameId))?.brandName || '—'
@@ -290,6 +356,8 @@ function CustomerCampaignCreateContent() {
     if (saved?.id) setCampaignId(saved.id)
     // Saving a PHONE source drops the file name server-side; require a re-import to go back to FILE.
     if (payload.sourceType === 'PHONE') setImportResult(null)
+    // A saved REJECTED campaign is back to DRAFT, so the rejection banner no longer applies.
+    setEditReason('')
     return saved?.id ?? campaignId
   }
 
@@ -380,13 +448,18 @@ function CustomerCampaignCreateContent() {
     setReviewError('')
   }
 
+  // In edit mode the user came from the campaign list; return there instead of starting a new form.
+  const finish = () => (isEdit ? navigate(APPROVAL_PATH) : resetForm())
+
   const handleCancel = () => {
     if (!campaignId) {
-      resetForm()
+      finish()
       return
     }
     confirmDialog({
-      message: 'Hủy tạo chiến dịch? Bản nháp đã lưu vẫn được giữ trên hệ thống.',
+      message: isEdit
+        ? 'Hủy sửa chiến dịch? Những thay đổi đã lưu nháp vẫn được giữ trên hệ thống.'
+        : 'Hủy tạo chiến dịch? Bản nháp đã lưu vẫn được giữ trên hệ thống.',
       header: 'Xác nhận hủy',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Có',
@@ -394,7 +467,7 @@ function CustomerCampaignCreateContent() {
       acceptClassName: 'p-button-danger',
       rejectClassName: 'p-button-text',
       defaultFocus: 'reject',
-      accept: resetForm,
+      accept: finish,
     })
   }
 
@@ -408,7 +481,7 @@ function CustomerCampaignCreateContent() {
       } else {
         toast.success('Đã xác nhận chiến dịch. Hệ thống sẽ gửi tin ngay.')
       }
-      resetForm()
+      finish()
     } catch (err) {
       toast.error(err.message || 'Không xác nhận được chiến dịch.')
     } finally {
@@ -464,7 +537,7 @@ function CustomerCampaignCreateContent() {
     })
   }
 
-  const busy = saving || importing || confirming
+  const busy = saving || importing || confirming || editLoading || Boolean(editError)
 
   const recipientSummary = () => {
     if (step < 2 && recipientCount === 0) return '—'
@@ -572,6 +645,17 @@ function CustomerCampaignCreateContent() {
 
   const renderImportSummary = () => {
     if (!importResult) return null
+    if (importResult.fromServer) {
+      return (
+        <div className="cw-note">
+          <Info size={15} />
+          <span>
+            Chiến dịch đang dùng {(importResult.success ?? 0).toLocaleString('vi-VN')} số đã nhập từ file trước đó.
+            Chọn file khác nếu muốn thay toàn bộ danh sách.
+          </span>
+        </div>
+      )
+    }
     const skipped = (importResult.failed ?? 0) + (importResult.duplicated ?? 0)
     const rows = Array.isArray(importResult.rows) ? importResult.rows : []
     return (
@@ -657,7 +741,11 @@ function CustomerCampaignCreateContent() {
                 <FileSpreadsheet size={18} />
                 <div>
                   <b>{importResult.file || 'Danh sách số'}</b>
-                  <p className="cw-hint">Đã tải lên · {(importResult.total ?? 0).toLocaleString('vi-VN')} dòng</p>
+                  <p className="cw-hint">
+                    {importResult.fromServer
+                      ? `Đã lưu · ${(importResult.success ?? 0).toLocaleString('vi-VN')} số hợp lệ`
+                      : `Đã tải lên · ${(importResult.total ?? 0).toLocaleString('vi-VN')} dòng`}
+                  </p>
                 </div>
               </div>
               <button type="button" className="cw-btn cw-btn-sm" onClick={handleChooseFile} disabled={busy}>
@@ -842,7 +930,7 @@ function CustomerCampaignCreateContent() {
         </div>
         <span className="cw-badge cw-badge-gray">Bản nháp</span>
       </div>
-      <p className="cw-sub">Kiểm tra lại toàn bộ thông tin. Bấm Sửa để quay lại đúng bước cần chỉnh.</p>
+      <p className="cw-sub">Kiểm tra lại toàn bộ thông tin trước khi xác nhận. Cần chỉnh sửa, hãy bấm Quay lại.</p>
 
       {reviewError && (
         <div className="cw-note cw-note-error cw-mb-16">
@@ -855,13 +943,7 @@ function CustomerCampaignCreateContent() {
       )}
 
       <div className="cw-sec">
-        <div className="cw-row cw-mb-8">
-          <h4 className="cw-h4">Thông tin chiến dịch & hình thức gửi</h4>
-          <div className="cw-bar-r">
-            <button type="button" className="cw-btn cw-btn-sm" onClick={() => setStep(1)}>Sửa thông tin</button>
-            <button type="button" className="cw-btn cw-btn-sm" onClick={() => setStep(4)}>Sửa lịch gửi</button>
-          </div>
-        </div>
+        <h4 className="cw-h4 cw-mb-8">Thông tin chiến dịch & hình thức gửi</h4>
         <KV label="Tên chiến dịch">{campaignName}</KV>
         <KV label="Ngày tạo">{formatDate(detail?.createdAt)}</KV>
         <KV label="Brandname">{detail?.brandname || brandnameLabel}</KV>
@@ -872,7 +954,7 @@ function CustomerCampaignCreateContent() {
       </div>
 
       <div className="cw-sec">
-        <div className="cw-row cw-mb-8"><h4 className="cw-h4">Danh sách số điện thoại & tin nhắn</h4><button type="button" className="cw-btn cw-btn-sm" onClick={() => setStep(2)}>Sửa</button></div>
+        <h4 className="cw-h4 cw-mb-8">Danh sách số điện thoại & tin nhắn</h4>
         <p className="cw-sub cw-mb-8">
           {preview.total.toLocaleString('vi-VN')} số
           {sourceType === 'FILE' ? ` từ file ${detail?.file || importResult?.file || ''}` : ' nhập tay'}.
@@ -918,7 +1000,7 @@ function CustomerCampaignCreateContent() {
       </div>
 
       <div className="cw-sec cw-sec-last">
-        <div className="cw-row cw-mb-8"><h4 className="cw-h4">Nội dung gửi</h4><button type="button" className="cw-btn cw-btn-sm" onClick={() => setStep(3)}>Sửa</button></div>
+        <h4 className="cw-h4 cw-mb-8">Nội dung gửi</h4>
         <p className="cw-quote">{content}</p>
       </div>
     </div>
@@ -977,10 +1059,48 @@ function CustomerCampaignCreateContent() {
       <div className="cc-page-header gw-page-header flex items-start gap-3">
         <span className="gw-card-icon"><Send size={18} /></span>
         <div>
-          <h2 className="cc-page-title">Tạo chiến dịch gửi tin SMS</h2>
-          <p className="cc-page-subtitle">Hoàn thành 5 bước để gửi chiến dịch. Bạn có thể quay lại bước trước bất kỳ lúc nào.</p>
+          <h2 className="cc-page-title">{isEdit ? 'Sửa chiến dịch gửi tin SMS' : 'Tạo chiến dịch gửi tin SMS'}</h2>
+          <p className="cc-page-subtitle">
+            {isEdit
+              ? 'Chỉnh sửa chiến dịch nháp hoặc bị từ chối, sau đó xác nhận lại để gửi.'
+              : 'Hoàn thành 5 bước để gửi chiến dịch. Bạn có thể quay lại bước trước bất kỳ lúc nào.'}
+          </p>
         </div>
       </div>
+
+      {isEdit && (editLoading || editError) ? (
+        <div className="gw-card cw-card">
+          {editLoading ? (
+            <p className="cw-sub" role="status">Đang tải chiến dịch...</p>
+          ) : (
+            <>
+              <div className="cw-note cw-note-error cw-mb-16" role="alert">
+                <Info size={15} />
+                <span>{editError}</span>
+              </div>
+              <button type="button" className="cw-btn" onClick={() => navigate(APPROVAL_PATH)}>
+                <ArrowLeft size={16} /> Về danh sách chiến dịch
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+      <>
+      {editReason && (
+        <div className="cw-note cw-note-error cw-mb-16">
+          <Info size={15} />
+          <span>Chiến dịch bị từ chối: {editReason}. Sau khi lưu, chiến dịch quay về trạng thái nháp.</span>
+        </div>
+      )}
+      {editScheduleExpired && sendType === 'SCHEDULED' && !isScheduleValid(scheduledAt) && (
+        <div className="cw-note cw-mb-16">
+          <Info size={15} />
+          <span>
+            Thời gian hẹn gửi đã lưu ({formatDateTime(scheduledAt)}) đã qua. Hãy chọn lại lịch gửi ở bước 4;
+            nếu lưu nháp trước đó, lịch cũ sẽ bị xoá.
+          </span>
+        </div>
+      )}
 
       <ol className="cw-steps">
         {STEPS.map((s) => {
@@ -1036,8 +1156,21 @@ function CustomerCampaignCreateContent() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
 
-export default CustomerCampaignCreateContent
+/**
+ * `?id=<campaignId>` opens the wizard on an existing DRAFT/REJECTED campaign.
+ * Keyed by id so switching between create and edit starts from a clean state.
+ */
+function CustomerCampaignCreatePage() {
+  const [searchParams] = useSearchParams()
+  const rawId = searchParams.get('id')
+  const editId = rawId && /^\d+$/.test(rawId) ? Number(rawId) : null
+  return <CustomerCampaignCreateContent key={editId ?? 'new'} editId={editId} />
+}
+
+export default CustomerCampaignCreatePage
