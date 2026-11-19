@@ -296,7 +296,8 @@ function CustomerCampaignCreateContent({ editId = null }) {
   const recipientCount = sourceType === 'FILE' ? (importResult?.success ?? 0) : phoneCheck.valid.length
   const scheduledAt = combineDateTime(scheduleDate, scheduleTime)
 
-  const buildPayload = () => {
+  // `reached` is the furthest step the user is moving to; a jump past step 4 must still send `type`.
+  const buildPayload = (reached = step) => {
     const payload = {
       name: campaignName.trim(),
       brandnameId: Number(brandnameId),
@@ -311,7 +312,7 @@ function CustomerCampaignCreateContent({ editId = null }) {
       payload.phones = phoneCheck.valid
     }
     if (content.trim()) payload.content = content
-    if (sendType === 'NOW' && Math.max(step, maxStep) >= 4) payload.type = 'NOW'
+    if (sendType === 'NOW' && Math.max(reached, maxStep) >= 4) payload.type = 'NOW'
     // An expired schedule would make every save fail; leave it out so step 4 asks for a new time.
     if (sendType === 'SCHEDULED' && isScheduleValid(scheduledAt)) {
       payload.type = 'SCHEDULED'
@@ -350,8 +351,8 @@ function CustomerCampaignCreateContent({ editId = null }) {
     return ''
   }
 
-  const persistDraft = async () => {
-    const payload = buildPayload()
+  const persistDraft = async (reached = step) => {
+    const payload = buildPayload(reached)
     const saved = await saveCampaignDraft({ token: authToken, payload })
     if (saved?.id) setCampaignId(saved.id)
     // Saving a PHONE source drops the file name server-side; require a re-import to go back to FILE.
@@ -406,6 +407,34 @@ function CustomerCampaignCreateContent({ editId = null }) {
   }
 
   const handleBack = () => setStep((s) => Math.max(1, s - 1))
+
+  // Timeline click. Going back needs no checks; going forward (edit mode, where every step
+  // already has data) validates the skipped steps, saves once, then jumps.
+  const goToStep = async (target) => {
+    if (target <= step) {
+      setStep(target)
+      return
+    }
+    for (let k = 1; k < target; k += 1) {
+      const error = validateStep(k)
+      if (error) {
+        toast.warn(error)
+        setStep(k)
+        return
+      }
+    }
+    setSaving(true)
+    try {
+      const id = await persistDraft(target)
+      setStep(target)
+      setMaxStep((m) => Math.max(m, target))
+      if (target === 5) loadReview(id, 1, previewLimit)
+    } catch (err) {
+      toast.error(err.message || 'Không lưu được chiến dịch.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleSaveDraft = async () => {
     let error = validateStep(1)
@@ -552,7 +581,8 @@ function CustomerCampaignCreateContent({ editId = null }) {
   }
 
   const stepHint = (s) => {
-    if (s.id >= step) return s.hint
+    // In edit mode every step is prefilled, so later steps can show their data too.
+    if (s.id === step || (s.id > step && !isEdit)) return s.hint
     if (s.id === 2) return recipientCount ? `${recipientCount.toLocaleString('vi-VN')} số` : s.hint
     if (s.id === 3) return activeSegment ? `${activeSegment.label}/số` : s.hint
     if (s.id === 4) return sendSummary()
@@ -1114,8 +1144,15 @@ function CustomerCampaignCreateContent({ editId = null }) {
           )
           return (
             <li key={s.id}>
-              {done ? (
-                <button type="button" className="cw-st cw-st-done" onClick={() => setStep(s.id)} disabled={busy}>{inner}</button>
+              {done || (isEdit && !current) ? (
+                <button
+                  type="button"
+                  className={`cw-st${done ? ' cw-st-done' : ''}`}
+                  onClick={() => goToStep(s.id)}
+                  disabled={busy}
+                >
+                  {inner}
+                </button>
               ) : (
                 <div className={`cw-st${current ? ' cw-st-cur' : ''}`} aria-current={current ? 'step' : undefined}>{inner}</div>
               )}

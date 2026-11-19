@@ -466,7 +466,7 @@ function CustomerCampaignApprovalContent() {
                 <th>Thời gian gửi</th>
                 <th>Sản lượng</th>
                 <th>Ngày tạo</th>
-                <th>Trạng thái hiện tại</th>
+                <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
